@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نظام إدارة الطلاب - كلية التربية النوعية، جامعة الزقازيق</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--navy:#0b1f4b;--navy2:#14306e;--gold:#c9a227;--gold2:#f3e3a0;--bg:#f5f6fa;--ink:#1a2240;--line:#dde1ee}
+*{box-sizing:border-box}body{margin:0;font-family:Cairo,Tahoma,sans-serif;background:var(--bg);color:var(--ink)}
+button{font-family:inherit;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--gold)}
+.btn{background:var(--navy);color:#fff;border:0;padding:8px 16px;border-radius:6px;font-weight:600;display:inline-block}
+.btn.gold{background:var(--gold);color:var(--navy)}.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn.red{background:#a32}
+.mini{background:#fff;border:1px solid var(--line);border-radius:5px;padding:3px 9px;font-size:12px;margin-inline-end:4px;color:var(--navy)}.mini.red{color:#a32;border-color:#e0b4b4}
+header{background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:10px 22px;border-bottom:4px solid var(--gold)}
+.lg{width:84px;height:70px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.lg img{max-width:84px;max-height:70px;object-fit:contain}
+.tt{flex:1;text-align:center}.tt h1{font-size:19px;margin:0;font-weight:800}.tt small{display:block;color:var(--gold2)}
+.us{font-size:12px;margin-top:4px}.us button{background:none;border:1px solid var(--gold);color:var(--gold2);border-radius:5px;margin-inline-start:6px;padding:2px 8px;font-size:12px}
+.layout{display:flex;min-height:calc(100vh - 92px)}
+nav{width:236px;background:var(--navy2);padding:10px 0;flex-shrink:0}
+nav button{display:block;width:100%;text-align:right;background:none;border:0;color:#dfe6ff;padding:11px 22px;font-size:14px;border-right:4px solid transparent}
+nav button.on,nav button:hover{background:var(--navy);color:var(--gold);border-right-color:var(--gold)}
+main{flex:1;padding:22px;min-width:0}
+h2{margin:0 0 14px;color:var(--navy);border-bottom:3px solid var(--gold);display:inline-block;padding-bottom:4px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+input,select,textarea{font-family:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;min-width:0;max-width:100%}
+.tw{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}th{background:var(--navy);color:#fff;padding:9px;text-align:right;white-space:nowrap}
+td{padding:8px 9px;border-bottom:1px solid var(--line)}tr:hover td{background:#fbf7e6}.nw{white-space:nowrap}
+.modal{position:fixed;inset:0;background:#0b1f4b99;display:flex;align-items:center;justify-content:center;padding:14px;z-index:9}
+.box{background:#fff;border-radius:10px;padding:20px;width:620px;max-width:100%;max-height:92vh;overflow:auto;border-top:5px solid var(--gold)}
+.grid,.grid5{display:grid;gap:10px}.grid{grid-template-columns:1fr 1fr}.grid5{grid-template-columns:repeat(5,1fr);gap:8px}
+.grid label,.grid5 label{display:flex;flex-direction:column;font-size:13px;gap:3px;font-weight:600}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.node{border-top:1px dashed var(--line);padding:10px 0}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.chip{background:var(--gold2);border-radius:14px;padding:3px 10px;font-size:12px;display:inline-flex;gap:5px;align-items:center}
+.chip .x{background:none;border:0;color:#a32;font-weight:800;padding:0}
+.note{background:var(--gold2);border-right:4px solid var(--gold);padding:8px 12px;border-radius:6px;font-size:13px;margin-bottom:12px}
+.tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:2px solid var(--line)}
+.tabs button{background:none;border:0;padding:9px 18px;font-weight:600;color:#556;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tabs button.on{color:var(--navy);border-bottom-color:var(--gold)}
+#login{max-width:360px;margin:9vh auto;background:#fff;padding:26px;border-radius:12px;border-top:6px solid var(--gold);text-align:center}
+#login input{width:100%;margin:6px 0}
+@media(max-width:760px){.layout{flex-direction:column}nav{width:100%;display:flex;overflow-x:auto}nav button{white-space:nowrap;width:auto}.grid,.two{grid-template-columns:1fr}.grid5{grid-template-columns:1fr 1fr}.lg{width:52px}.lg img{max-width:52px}.tt h1{font-size:14px}}
+</style></head><body>
+<div id="app"></div>
+<script>
+/* ===== الإعدادات ===== */
+/* مفتاح anon آمن هنا: لا يملك صلاحية على الجداول، ويصل فقط إلى دوال البوابة gw */
+const CFG={url:'https://yvpriubgmahlpeovfifo.supabase.co/rest/v1',key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2cHJpdWJnbWFobHBlb3ZmaWZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4ODkwMTEsImV4cCI6MjEwOTQ2NTAxMX0.c2u1oAoODgBxIfYL5WFfGHVgNVtJ41oyfdXKdtNtTe4'};
+const L=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const S=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+let user=L('user',null);if(user&&!user.token){user=null;localStorage.removeItem('user')}
+let orgs=[],logos={u:'',c:''},cur='org';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const err=e=>alert('تعذر تنفيذ العملية: '+(e&&e.message||e));
+const rpc=async(fn,args)=>{
+ const r=await fetch(`${CFG.url}/rpc/${fn}`,{method:'POST',headers:{apikey:CFG.key,Authorization:'Bearer '+CFG.key,'Content-Type':'application/json','Content-Profile':'gw','Accept-Profile':'gw'},body:JSON.stringify(args)});
+ const j=await r.json().catch(()=>null);
+ if(r.status===406)throw Error('المخطط gw غير مفعّل في Supabase. شغّل gw.sql (آخره أمر الإتاحة)');
+ if(!r.ok){const m=(j&&j.message)||'تعذر الاتصال بالخادم';
+  if(/unauthorized/.test(m)&&user){localStorage.removeItem('user');user=null;login('انتهت الجلسة، سجّل الدخول مرة أخرى')}
+  throw Error(m==='forbidden'?'ليست لديك صلاحية لهذه العملية':m)}
+ return j};
+const T=()=>user&&user.token;
+const db={
+ list:t=>rpc('list_rows',{p_token:T(),p_table:t}),
+ save:(t,row,pk,old)=>rpc('save_row',{p_token:T(),p_table:t,p_row:row,p_pk:pk,p_old:old==null?null:String(old)}),
+ del:(t,pk,v)=>rpc('remove_row',{p_token:T(),p_table:t,p_pk:pk,p_val:String(v)}),
+ bulk:async(fn,rows)=>{let n=0;for(let i=0;i<rows.length;i+=1000){n+=(await rpc(fn,{p_token:T(),p_rows:rows.slice(i,i+1000)})).count}return n}
+};
+const ROLE={admin:'مدير',employee:'موظف',doctor:'عضو هيئة تدريس',assistant:'معيد',student:'طالب'};
+const W=()=>user&&['admin','employee'].includes(user.role);
+const YR=['الأولى','الثانية','الثالثة','الرابعة'];
+const LBL={college:'كلية',department:'قسم',track:'شعبة',year:'فرقة',level:'مستوى'};
+const LB={college:'الكلية',department:'القسم',track:'الشعبة',year:'الفرقة',level:'المستوى'};
+const SF=['college','department','track','year','level'];
+
+/* ===== أدوات مشتركة ===== */
+const img=s=>s?`<img src="${s}" alt="">`:'';
+function hdr(){return `<div class="lg">${img(logos.u)}</div><div class="tt"><h1>كلية التربية النوعية - جامعة الزقازيق</h1><small>نظام إدارة الطلاب</small>${user?`<div class="us">${esc(user.name)} (${ROLE[user.role]||''})<button onclick="pwModal()">تغيير كلمة المرور</button><button onclick="logout()">خروج</button></div>`:''}</div><div class="lg">${img(logos.c)}</div>`}
+function shell(b){$('#app').innerHTML=`<header id="hd">${hdr()}</header>${b}`}
+function modal(html){const d=document.createElement('div');d.className='modal';d.innerHTML=`<div class="box">${html}</div>`;d.onclick=e=>{if(e.target===d)d.remove()};document.body.appendChild(d);return d}
+function ask(title,val,cb){const d=modal(`<h2>${title}</h2><input id="ai" style="width:100%" value="${esc(val||'')}"><div class="bar" style="margin:12px 0 0"><button class="btn gold" id="ok">حفظ</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إلغاء</button></div>`);
+ const i=d.querySelector('#ai');i.focus();const sv=()=>{const v=i.value.trim();if(!v)return;d.remove();cb(v)};d.querySelector('#ok').onclick=sv;i.onkeydown=e=>{if(e.key==='Enter')sv()}}
+const NZ=s=>String(s).replace(/\s/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
+async function readX(file,map){const wb=XLSX.read(await file.arrayBuffer());const js=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+ return js.map(o=>{const r={};for(const k in o){const f=map[NZ(k)],x=String(o[k]).trim();if(f&&x!=='')r[f]=x}return r})}
+function tplX(name,heads){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([heads]),'Sheet1');XLSX.writeFile(wb,name)}
+const fdate=x=>x?new Date(x).toLocaleDateString('ar-EG'):'';
+
+/* قوائم منسدلة متسلسلة مبنية على الهيكل */
+function opts(f,v){
+ if(f==='college')return orgs.filter(o=>o.kind==='college').map(o=>o.name);
+ const c=orgs.find(o=>o.kind==='college'&&o.name===v.college);if(!c)return[];
+ const ch=(k,p)=>orgs.filter(o=>o.kind===k&&o.parent_id===p.id).map(o=>o.name);
+ if(f==='department'||f==='year')return ch(f,c);
+ if(f==='track'){const d=orgs.find(o=>o.kind==='department'&&o.parent_id===c.id&&o.name===v.department);return d?ch('track',d):[]}
+ if(f==='level'){const y=orgs.find(o=>o.kind==='year'&&o.parent_id===c.id&&o.name===v.year);return y?ch('level',y):[]}
+ return[]}
+function casc(id,fields,v,cb,any){
+ const el=$('#'+id);
+ el.innerHTML=fields.map(f=>`<label>${LB[f]}<select data-f="${f}"><option value="">${any||'اختر...'}</option>${opts(f,v).map(o=>`<option ${v[f]===o?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`).join('');
+ el.querySelectorAll('select').forEach(s=>s.onchange=()=>{const f=s.dataset.f;v[f]=s.value||undefined;
+  ({college:['department','track','year','level'],department:['track'],year:['level']}[f]||[]).forEach(d=>delete v[d]);
+  casc(id,fields,v,cb,any);cb&&cb(v)})}
+
+/* نموذج عام: fields=[[key,label,type,options,attrs]] */
+function form(title,fields,vals,opt,onSave){
+ const v={...vals};
+ const d=modal(`<h2>${title}</h2><div class="grid">${fields.map(f=>`<label>${f[1]}${f[2]==='sel'?`<select name="${f[0]}"><option value=""></option>${f[3].map(o=>{o=Array.isArray(o)?o:[o,o];return `<option value="${esc(o[0])}" ${v[f[0]]==o[0]?'selected':''}>${esc(o[1])}</option>`}).join('')}</select>`:`<input name="${f[0]}" type="${f[2]||'text'}" value="${f[2]==='password'?'':esc(v[f[0]])}" ${f[4]||''}>`}</label>`).join('')}</div>${opt.c?'<div id="cc" class="grid" style="margin-top:10px"></div>':''}${opt.note?`<div class="note" style="margin-top:10px">${opt.note}</div>`:''}<div class="bar" style="margin:14px 0 0"><button class="btn gold" id="sv">حفظ</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إلغاء</button></div>`);
+ if(opt.c)casc('cc',opt.c,v,null);
+ d.querySelector('#sv').onclick=async()=>{const row={};
+  d.querySelectorAll('[name]').forEach(i=>{const x=i.value.trim();row[i.name]=x===''?null:(i.type==='number'?+x:x)});
+  (opt.c||[]).forEach(f=>row[f]=v[f]||null);
+  if(opt.isNew)Object.keys(row).forEach(k=>row[k]===null&&delete row[k]);
+  try{await onSave(row,d)}catch(e){err(e)}};
+ return d}
+
+/* تحميل البيانات المفلترة Excel/PDF مع اختيار الحقول */
+function exportModal(rows,cols,fname,title){
+ const d=modal(`<h2>تحميل البيانات (${rows.length} سجل)</h2><p>اختر الحقول المراد ظهورها:</p><div class="grid">${cols.map((c,i)=>`<label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" checked value="${i}">${c[1]}</label>`).join('')}</div><div class="bar" style="margin:14px 0 0"><button class="btn gold" id="ex">Excel</button><button class="btn" id="px">PDF</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إغلاق</button></div>`);
+ const pick=()=>[...d.querySelectorAll('input:checked')].map(i=>cols[+i.value]);
+ d.querySelector('#ex').onclick=()=>{const p=pick();if(!p.length)return;
+  const ws=XLSX.utils.json_to_sheet(rows.map(r=>Object.fromEntries(p.map(c=>[c[1],r[c[0]]??''])))),wb=XLSX.utils.book_new();
+  wb.Workbook={Views:[{RTL:true}]};XLSX.utils.book_append_sheet(wb,ws,'Data');XLSX.writeFile(wb,fname+'.xlsx')};
+ d.querySelector('#px').onclick=()=>{const p=pick();if(!p.length)return;const w=window.open('','_blank');if(!w)return alert('اسمح بالنوافذ المنبثقة ثم أعد المحاولة');
+  w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:Tahoma,Arial;padding:16px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #888;padding:5px;text-align:right}th{background:#0b1f4b;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}h3{color:#0b1f4b;text-align:center}.h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}img{height:64px}</style></head><body><div class="h">${logos.u?`<img src="${logos.u}">`:'<span></span>'}<h3>كلية التربية النوعية - جامعة الزقازيق<br>${esc(title)}</h3>${logos.c?`<img src="${logos.c}">`:'<span></span>'}</div><table><tr>${p.map(c=>`<th>${c[1]}</th>`).join('')}</tr>${rows.map(r=>`<tr>${p.map(c=>`<td>${esc(r[c[0]])}</td>`).join('')}</tr>`).join('')}</table></body></html>`);
+  w.document.close();setTimeout(()=>w.print(),500)}}
+
+/* ===== الدخول والتنقل ===== */
+function login(msg=''){shell(`<div id="login"><h2 style="border:0">تسجيل الدخول</h2><input id="u" placeholder="اسم المستخدم أو الكود الجامعي" autocomplete="username"><input id="p" type="password" placeholder="كلمة المرور" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"><div style="color:#a32;min-height:22px">${msg}</div><button class="btn gold" style="width:100%" onclick="doLogin()">دخول</button></div>`)}
+async function doLogin(){const u=$('#u').value.trim(),p=$('#p').value;
+ try{user=await rpc('login',{p_username:u,p_password:p});S('user',user);home()}catch(e){user=null;login(esc(e.message))}}
+async function logout(){try{await rpc('logout',{p_token:T()})}catch{}localStorage.removeItem('user');user=null;login()}
+function pwModal(){form('تغيير كلمة المرور',[['o','كلمة المرور الحالية','password'],['n','كلمة المرور الجديدة (6 أحرف فأكثر)','password'],['c','تأكيد كلمة المرور الجديدة','password']],{},{},async(r,d)=>{
+ if(r.n!==r.c)return alert('تأكيد كلمة المرور غير مطابق');
+ await rpc('change_password',{p_token:T(),p_old:r.o||'',p_new:r.n||''});d.remove();alert('تم تغيير كلمة المرور')})}
+const NAV=[['org','الهيكل التنظيمي','w'],['students','الطلاب','r'],['regs','اللوائح والمواد','r'],['complaints','الشكاوى','r'],['advisors','المرشدون الأكاديميون','w'],
+ ['timetable','الجداول الدراسية','r'],['grades','سجل الدرجات','r'],['exams','الاختبارات الإلكترونية','r'],['attendance','الغياب','r'],['term','بداية/إغلاق التيرم','r'],
+ ['staff','الحسابات والصلاحيات','a'],['settings','الإعدادات','r']];
+const PLAN={timetable:['الجداول الدراسية',['إعداد الأيام والمباني والقاعات وساعات اليوم','تسكين أعضاء هيئة التدريس والمعيدين على المواد','توزيع تلقائي مع تعديل يدوي قبل الاعتماد','عرض الجدول للطالب مع حجب المواد المغلقة']],
+ grades:['سجل الدرجات',['رفع درجات الاختبارات بإكسيل مع تحديد الفرقة والظهور','إنشاء أرقام الجلوس وتصديرها Excel/PDF']],
+ exams:['الاختبارات الإلكترونية',['أسئلة اختيارية ومقالية وأقسام','منع الخروج من الشاشة وإرسال تلقائي','تصحيح المقالي ودرجة موحدة','مجموعات الدردشة والمحتوى']],
+ attendance:['الغياب',['تقسيم الطلاب لسكاشن تلقائيًا','درجة الحضور وشرائح النسب والإنذارات']],
+ term:['بداية/إغلاق التيرم',['احتساب الحضور والنجاح والرسوب','حجب وفتح المواد حسب المتطلبات','الفصل الصيفي والترقية التلقائية للمستوى']]};
+async function home(){
+ if(user.role==='student'){shell(`<main style="padding:22px;max-width:640px;margin:auto"><h2>أهلاً ${esc(user.name)}</h2><div class="note">تم تسجيل دخولك بكودك الجامعي (${esc(user.code)}). بوابة الطالب (التسجيل والجدول والدرجات) ستُضاف في المراحل القادمة. يمكنك الآن تغيير كلمة المرور.</div><button class="btn gold" onclick="pwModal()">تغيير كلمة المرور</button></main>`);return}
+ try{orgs=await db.list('org')}catch(e){orgs=[]}
+ const items=NAV.filter(n=>n[2]==='r'||(n[2]==='w'&&W())||(n[2]==='a'&&user.role==='admin'));
+ if(!items.find(n=>n[0]===cur))cur=items[0][0];
+ shell(`<div class="layout"><nav>${items.map(([k,t])=>`<button data-k="${k}" class="${k===cur?'on':''}" onclick="go('${k}')">${t}</button>`).join('')}</nav><main id="main"></main></div>`);go(cur)}
+function go(k){cur=k;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+ const f={org:pgOrg,students:pgStudents,regs:pgRegs,complaints:pgComp,advisors:pgAdv,staff:pgStaff,settings:pgSet}[k];
+ if(f)f();else{const[t,l]=PLAN[k];$('#main').innerHTML=`<h2>${t}</h2><div class="note">تُبنى هذه الوحدة في مرحلة لاحقة فوق نفس الأكواد والهيكل واللوائح.</div><div class="card"><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul></div>`}}
+
+/* ===== الهيكل التنظيمي ===== */
+let selCol=null;
+async function reloadOrg(){orgs=await db.list('org');pgOrg()}
+function oAdd(k,p){ask('إضافة '+LBL[k],'',async n=>{try{const r=await db.save('org',{kind:k,name:n,parent_id:p},'id',null);if(k==='college')selCol=r.row.id;await reloadOrg()}catch(e){err(e)}})}
+function oRen(id){const o=orgs.find(x=>x.id===id);ask('تعديل الاسم',o.name,async n=>{try{await db.save('org',{name:n},'id',id);await reloadOrg()}catch(e){err(e)}})}
+async function oDel(id){if(!confirm('سيتم حذف هذا العنصر وكل ما تحته. متابعة؟'))return;try{await db.del('org','id',id);await reloadOrg()}catch(e){err(e)}}
+async function oDefaults(c){if(!confirm('سيتم إنشاء الفرق (الأولى إلى الرابعة) ومستويان لكل فرقة. متابعة؟'))return;
+ try{for(let i=0;i<4;i++){const y=(await db.save('org',{kind:'year',name:YR[i],parent_id:c},'id',null)).row;for(let j=1;j<=2;j++)await db.save('org',{kind:'level',name:'المستوى '+(2*i+j),parent_id:y.id},'id',null)}}catch(e){err(e)}await reloadOrg()}
+function pgOrg(){
+ const cols=orgs.filter(o=>o.kind==='college'),w=W();
+ if(!cols.find(c=>c.id===selCol))selCol=cols[0]&&cols[0].id;
+ const c=cols.find(x=>x.id===selCol),kid=(k,p)=>orgs.filter(o=>o.kind===k&&o.parent_id===p);
+ const act=o=>w?`<button class="mini" onclick="oRen(${o.id})">تعديل</button><button class="mini red" onclick="oDel(${o.id})">حذف</button>`:'';
+ const chip=t=>`<span class="chip">${esc(t.name)}${w?`<button class="x" title="تعديل" onclick="oRen(${t.id})">✎</button><button class="x" title="حذف" onclick="oDel(${t.id})">×</button>`:''}</span>`;
+ let h=`<h2>الهيكل التنظيمي</h2><div class="note">ابدأ بإضافة الكلية، ثم اختر الكلية لإضافة أقسامها (وشعبة أو أكثر لكل قسم) وفرقها ومستوياتها. هذه القوائم هي التي تظهر في بقية النظام.</div><div class="bar">`+cols.map(x=>`<button class="btn ${x.id===selCol?'gold':'ghost'}" onclick="selCol=${x.id};pgOrg()">${esc(x.name)}</button>`).join('')+(w?`<button class="btn" onclick="oAdd('college',null)">+ كلية جديدة</button>`:'')+`</div>`;
+ if(!c){$('#main').innerHTML=h+'<div class="card">لا توجد كليات بعد.</div>';return}
+ h+=`<div class="card"><b>الكلية: ${esc(c.name)}</b> ${act(c)}</div><div class="two"><div class="card"><b>الأقسام والشعب</b>`
+  +kid('department',c.id).map(d=>`<div class="node"><div>${esc(d.name)} ${act(d)}</div><div class="chips">${kid('track',d.id).map(chip).join('')}${w?`<button class="mini" onclick="oAdd('track',${d.id})">+ شعبة</button>`:''}</div></div>`).join('')
+  +(w?`<button class="btn ghost" onclick="oAdd('department',${c.id})">+ قسم</button>`:'')
+  +`</div><div class="card"><b>الفرق والمستويات</b>`
+  +kid('year',c.id).map(y=>`<div class="node"><div>${esc(y.name)} ${act(y)}</div><div class="chips">${kid('level',y.id).map(chip).join('')}${w?`<button class="mini" onclick="oAdd('level',${y.id})">+ مستوى</button>`:''}</div></div>`).join('')
+  +(w?`<button class="btn ghost" onclick="oAdd('year',${c.id})">+ فرقة</button> <button class="btn ghost" onclick="oDefaults(${c.id})">إنشاء 4 فرق و8 مستويات تلقائيًا</button>`:'')+`</div></div>`;
+ $('#main').innerHTML=h}
+
+/* ===== الطلاب ===== */
+const SC=[['name','الاسم'],['code','الكود'],['email','الإيميل'],['national_id','الرقم القومي'],['college','الكلية'],['department','القسم'],['track','الشعبة'],['year','الفرقة'],['level','المستوى']];
+const SMAP={'الاسم':'name','الكود':'code','الايميل':'email','الرقمالقومي':'national_id','الكليه':'college','القسم':'department','الشعبه':'track','الفرقه':'year','المستوي':'level'};
+let stu=[],sf={},sq='';
+async function pgStudents(){
+ try{stu=await db.list('students')}catch(e){return err(e)}
+ const w=W();
+ $('#main').innerHTML=`<h2>إدارة الطلاب</h2><div class="card"><div id="fc" class="grid5"></div><div class="bar" style="margin:12px 0 0"><input placeholder="بحث بالاسم أو الكود أو الرقم القومي..." value="${esc(sq)}" oninput="sq=this.value;stRows()" style="flex:1;min-width:200px"><button class="btn ghost" onclick="stExport()">تحميل (Excel / PDF)</button>`
+  +(w?`<button class="btn gold" onclick="stForm()">+ طالب جديد</button><label class="btn ghost">رفع/تحديث من Excel<input type="file" hidden accept=".xlsx,.xls,.csv" onchange="stUp(this)"></label><button class="btn ghost" onclick="tplX('students_template.xlsx',['الاسم','الكود','الإيميل','الرقم القومي','الكلية','القسم','الشعبة','الفرقة','المستوى'])">تحميل القالب</button>`:'')
+  +`<b id="cnt"></b></div></div><div class="tw"><table><thead><tr>${SC.map(c=>`<th>${c[1]}</th>`).join('')}${w?'<th></th>':''}</tr></thead><tbody id="tb"></tbody></table></div>`;
+ casc('fc',SF,sf,stRows,'الكل');stRows()}
+const stFilt=()=>stu.filter(s=>SF.every(f=>!sf[f]||s[f]===sf[f])&&(!sq||[s.name,s.code,s.national_id,s.email].join(' ').includes(sq)));
+function stRows(){const r=stFilt(),w=W();$('#cnt').textContent=r.length+' طالب'+(r.length>200?' (يعرض أول 200)':'');
+ $('#tb').innerHTML=r.slice(0,200).map(s=>`<tr>${SC.map(c=>`<td>${esc(s[c[0]])}</td>`).join('')}${w?`<td class="nw"><button class="mini" onclick="stForm('${esc(s.code)}')">تعديل</button><button class="mini" onclick="stPw('${esc(s.code)}')">إعادة كلمة المرور</button><button class="mini red" onclick="stDel('${esc(s.code)}')">حذف</button></td>`:''}</tr>`).join('')||`<tr><td colspan="10">لا توجد نتائج.</td></tr>`}
+function stExport(){exportModal(stFilt(),SC,'students','بيانات الطلاب')}
+function stForm(code){const cur=code?stu.find(s=>s.code===code):{};
+ form(code?'تعديل بيانات طالب':'إضافة طالب',[['name','الاسم'],['code','الكود الجامعي','text',null,code?'readonly':''],['email','الإيميل','email'],['national_id','الرقم القومي']],cur,{c:SF,isNew:!code,note:code?'':'سيُنشأ للطالب حساب تلقائيًا: اسم المستخدم وكلمة المرور = الكود الجامعي، ويمكنه تغييرها لاحقًا.'},
+  async(row,d)=>{if(!row.name||!row.code)return alert('الاسم والكود مطلوبان');await db.save('students',row,'code',code||null);d.remove();pgStudents()})}
+async function stDel(c){if(!confirm('حذف الطالب '+c+'؟'))return;try{await db.del('students','code',c);pgStudents()}catch(e){err(e)}}
+async function stPw(c){if(!confirm('إعادة كلمة مرور الطالب إلى كوده الجامعي؟'))return;try{await rpc('reset_student_password',{p_token:T(),p_code:c});alert('تمت إعادة كلمة المرور')}catch(e){err(e)}}
+async function stUp(inp){const f=inp.files[0];inp.value='';if(!f)return;
+ try{const rows=(await readX(f,SMAP)).filter(r=>r.code);if(!rows.length)return alert('لم يتم العثور على عمود "الكود". تأكد من عناوين الأعمدة (استخدم القالب).');
+  const names=new Set(orgs.filter(o=>o.kind==='college').map(o=>o.name)),bad=rows.filter(r=>r.college&&!names.has(r.college)).length;
+  if(!confirm(`سيتم إضافة/تحديث ${rows.length} طالب بالكود، وإنشاء حساب لكل طالب جديد (المستخدم وكلمة المرور = الكود).`+(bad?`\nتنبيه: ${bad} سجل كليته غير موجودة في الهيكل.`:'')))return;
+  alert('تم: '+await db.bulk('bulk_students',rows)+' سجل');pgStudents()}catch(e){err(e)}}
+
+/* ===== اللوائح والمواد ===== */
+let rt='cat',curReg=null,crs=[],regs=[],rcs=[],cq='';
+async function pgRegs(){
+ try{[crs,regs,rcs]=await Promise.all([db.list('courses'),db.list('regulations'),db.list('reg_courses')])}catch(e){return err(e)}
+ if(curReg&&!regs.find(r=>r.id===curReg))curReg=null;
+ $('#main').innerHTML=`<h2>اللوائح والمواد</h2><div class="tabs"><button class="${rt==='cat'?'on':''}" onclick="rt='cat';pgRegs()">1) المواد (الدليل)</button><button class="${rt==='reg'?'on':''}" onclick="rt='reg';pgRegs()">2) اللوائح</button></div><div id="rb"></div>`;
+ rt==='cat'?catView():(curReg?regView():regList())}
+/* دليل المواد */
+function catView(){const w=W();
+ $('#rb').innerHTML=`<div class="note">أضف كل المواد أولًا بأكوادها (يدويًا أو برفع Excel)، ثم انتقل إلى اللوائح لإدراجها وضبط ساعاتها ودرجاتها ومتطلباتها.</div><div class="bar"><input placeholder="بحث بالكود أو الاسم" value="${esc(cq)}" oninput="cq=this.value;catRows()" style="flex:1">`
+  +(w?`<button class="btn gold" onclick="crsForm()">+ إضافة مادة</button><label class="btn ghost">رفع من Excel<input type="file" hidden accept=".xlsx,.xls,.csv" onchange="crsUp(this)"></label><button class="btn ghost" onclick="tplX('courses_template.xlsx',['كود المادة','اسم المادة'])">تحميل القالب</button>`:'')
+  +`<button class="btn ghost" onclick="exportModal(crs,[['code','كود المادة'],['name','اسم المادة']],'courses','دليل المواد')">تحميل</button><b id="cc2"></b></div><div class="tw"><table><thead><tr><th>الكود</th><th>اسم المادة</th><th>عدد اللوائح المدرجة بها</th>${w?'<th></th>':''}</tr></thead><tbody id="cb"></tbody></table></div>`;catRows()}
+function catRows(){const r=crs.filter(c=>!cq||(c.code+' '+c.name).includes(cq)),w=W();$('#cc2').textContent=r.length+' مادة';
+ $('#cb').innerHTML=r.slice(0,300).map(c=>`<tr><td>${esc(c.code)}</td><td>${esc(c.name)}</td><td>${rcs.filter(x=>x.course_code===c.code).length}</td>${w?`<td class="nw"><button class="mini" onclick="crsForm(${c.id})">تعديل</button><button class="mini red" onclick="crsDel(${c.id})">حذف</button></td>`:''}</tr>`).join('')||'<tr><td colspan="4">لا توجد مواد.</td></tr>'}
+function crsForm(id){const cur=id?crs.find(c=>c.id===id):{};
+ form(id?'تعديل مادة':'إضافة مادة',[['code','كود المادة','text',null,id?'readonly':''],['name','اسم المادة']],cur,{isNew:!id},async(row,d)=>{if(!row.code||!row.name)return alert('الكود والاسم مطلوبان');await db.save('courses',row,'id',id||null);d.remove();pgRegs()})}
+async function crsDel(id){const c=crs.find(x=>x.id===id);if(rcs.some(x=>x.course_code===c.code))return alert('المادة مدرجة في لائحة. احذفها من اللائحة أولًا.');if(!confirm('حذف المادة؟'))return;try{await db.del('courses','id',id);pgRegs()}catch(e){err(e)}}
+async function crsUp(inp){const f=inp.files[0];inp.value='';if(!f)return;
+ try{const rows=(await readX(f,{'كودالماده':'code','الكود':'code','اسمالماده':'name','الاسم':'name'})).filter(r=>r.code&&r.name);if(!rows.length)return alert('لم يتم العثور على أعمدة "كود المادة" و"اسم المادة".');
+  if(!confirm(`سيتم إضافة/تحديث ${rows.length} مادة. متابعة؟`))return;alert('تم: '+await db.bulk('bulk_courses',rows)+' مادة');pgRegs()}catch(e){err(e)}}
+/* قائمة اللوائح */
+function regList(){const w=W();
+ $('#rb').innerHTML=(w?`<div class="bar"><button class="btn gold" onclick="regForm()">+ لائحة جديدة</button></div>`:'')+`<div class="tw"><table><thead><tr><th>اسم اللائحة</th><th>الكلية</th><th>القسم</th><th>الشعبة</th><th>ساعات التخرج</th><th>عدد المواد</th><th></th></tr></thead><tbody>`
+  +(regs.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.college)}</td><td>${esc(r.department)}</td><td>${esc(r.track)}</td><td>${esc(r.grad_hours)}</td><td>${rcs.filter(x=>x.reg_id===r.id).length}</td><td class="nw"><button class="mini" onclick="curReg=${r.id};pgRegs()">فتح وضبط المواد</button>${w?`<button class="mini" onclick="regForm(${r.id})">تعديل</button><button class="mini red" onclick="regDel(${r.id})">حذف</button>`:''}</td></tr>`).join('')||'<tr><td colspan="7">لا توجد لوائح.</td></tr>')+`</tbody></table></div>`}
+function regForm(id){const cur=id?regs.find(x=>x.id===id):{min_hours:12,max_hours:20};
+ form(id?'تعديل لائحة':'لائحة جديدة',[['name','اسم اللائحة'],['grad_hours','إجمالي ساعات التخرج','number'],['min_hours','الحد الأدنى لساعات الفصل','number'],['max_hours','الحد الأقصى لساعات الفصل','number']],cur,{c:['college','department','track'],isNew:!id},
+  async(row,d)=>{if(!row.name||!row.college||!row.department)return alert('اسم اللائحة والكلية والقسم مطلوبة');await db.save('regulations',row,'id',id||null);d.remove();pgRegs()})}
+async function regDel(id){if(!confirm('حذف اللائحة وكل موادها؟'))return;try{await db.del('regulations','id',id);pgRegs()}catch(e){err(e)}}
+/* مواد اللائحة */
+const nm=c=>(crs.find(x=>x.code===c)||{}).name||'';
+function regView(){const r=regs.find(x=>x.id===curReg),w=W();
+ const items=rcs.filter(x=>x.reg_id===curReg).sort((a,b)=>(a.year||'').localeCompare(b.year||'','ar')||(a.level||'').localeCompare(b.level||'','ar')||a.course_code.localeCompare(b.course_code));
+ const tot=items.reduce((a,x)=>a+(+x.credit_hours||0),0);
+ $('#rb').innerHTML=`<div class="bar"><button class="btn ghost" onclick="curReg=null;pgRegs()">← رجوع للوائح</button><b>${esc(r.name)}</b></div><div class="note">${esc(r.college)} / ${esc(r.department)} / ${esc(r.track||'كل الشعب')} — ساعات التخرج المطلوبة: ${r.grad_hours||'-'} — مجموع ساعات المواد المدرجة: ${tot} — حد الفصل: ${r.min_hours||'-'} إلى ${r.max_hours||'-'}</div>`
+  +(w?`<div class="bar"><button class="btn gold" onclick="rcForm()">+ إدراج مادة في اللائحة</button></div>`:'')
+  +`<div class="tw"><table><thead><tr><th>الكود</th><th>المادة</th><th>الفرقة</th><th>المستوى</th><th>الساعات</th><th>النوع</th><th>عملي</th><th>أعمال/عملي/تحريري</th><th>المتطلبات السابقة</th><th>مرات الإعادة</th>${w?'<th></th>':''}</tr></thead><tbody>`
+  +(items.map(x=>`<tr><td>${esc(x.course_code)}</td><td>${esc(nm(x.course_code))}</td><td>${esc(x.year)}</td><td>${esc(x.level)}</td><td>${esc(x.credit_hours)}</td><td>${x.mandatory==='نعم'?'إجبارية':'اختيارية'}</td><td>${esc(x.has_practical)}</td><td>${x.coursework||0} / ${x.practical||0} / ${x.final_exam||0}</td><td>${esc(x.prereq)}</td><td>${esc(x.max_retakes)}</td>${w?`<td class="nw"><button class="mini" onclick="rcForm(${x.id})">تعديل</button><button class="mini red" onclick="rcDel(${x.id})">حذف</button></td>`:''}</tr>`).join('')||'<tr><td colspan="11">لم تُدرج مواد بعد.</td></tr>')+`</tbody></table></div>`}
+async function rcDel(id){const x=rcs.find(r=>r.id===id);
+ if(rcs.some(o=>o.reg_id===curReg&&o.id!==id&&(o.prereq||'').split(',').includes(x.course_code)))return alert('هذه المادة متطلب سابق لمواد أخرى في اللائحة. أزلها من متطلباتها أولًا.');
+ if(!confirm('إزالة المادة من اللائحة؟'))return;try{await db.del('reg_courses','id',id);pgRegs()}catch(e){err(e)}}
+function rcForm(id){
+ const reg=regs.find(x=>x.id===curReg),cur=id?rcs.find(x=>x.id===id):null,inReg=rcs.filter(x=>x.reg_id===curReg);
+ const used=new Set(inReg.map(x=>x.course_code)),avail=crs.filter(c=>!used.has(c.code));
+ if(!cur&&!avail.length)return alert('كل مواد الدليل أُدرجت في هذه اللائحة (أو لا توجد مواد). أضف مواد من تبويب المواد.');
+ const find=(s,list)=>{s=s.trim();return list.find(c=>s===c.code+' - '+c.name||s===c.code||s===c.name)};
+ const others=inReg.filter(x=>!cur||x.id!==cur.id).map(x=>crs.find(c=>c.code===x.course_code)).filter(Boolean);
+ const pm={};inReg.forEach(x=>pm[x.course_code]=(x.prereq||'').split(',').filter(Boolean));
+ const reach=(a,b,seen=new Set())=>a===b||(!seen.has(a)&&(seen.add(a),(pm[a]||[]).some(p=>reach(p,b,seen))));
+ let pre=cur&&cur.prereq?cur.prereq.split(',').filter(Boolean):[];
+ const v={college:reg.college,year:cur?cur.year:undefined,level:cur?cur.level:undefined},c0=cur||{credit_hours:3,mandatory:'نعم',has_practical:'لا',coursework:20,practical:0,final_exam:80,max_retakes:0};
+ const so=(n,l,a)=>`<select id="${n}">${l.map(o=>`<option ${o===a?'selected':''}>${o}</option>`).join('')}</select>`;
+ const d=modal(`<h2>${cur?'تعديل مادة في اللائحة':'إدراج مادة في اللائحة'}</h2><div class="grid">
+  <label>المادة (اختر أو اكتب الكود أو الاسم)<input id="rc" list="dl1" value="${cur?esc(cur.course_code+' - '+nm(cur.course_code)):''}" ${cur?'readonly':''}><datalist id="dl1">${avail.map(c=>`<option value="${esc(c.code+' - '+c.name)}">`).join('')}</datalist></label>
+  <label>عدد الساعات<input id="rh" type="number" min="0" value="${c0.credit_hours??''}"></label>
+  <div id="yl" class="grid" style="grid-column:1/-1"></div>
+  <label>نوع المادة<select id="rm"><option value="نعم" ${c0.mandatory==='نعم'?'selected':''}>إجبارية</option><option value="لا" ${c0.mandatory==='لا'?'selected':''}>اختيارية</option></select></label>
+  <label>لها جزء عملي؟${so('hp',['نعم','لا'],c0.has_practical)}</label>
+  <label>أعمال فصلية<input id="cw" type="number" min="0" value="${c0.coursework??''}"></label>
+  <label>عملي/تطبيقي<input id="pr" type="number" min="0" value="${c0.practical??''}"></label>
+  <label>تحريري<input id="fe" type="number" min="0" value="${c0.final_exam??''}"></label>
+  <label>عدد مرات الإعادة المتاحة<input id="mr" type="number" min="0" value="${c0.max_retakes??''}"></label>
+  <label style="grid-column:1/-1">المتطلبات السابقة (المواد المدرجة في اللائحة فقط - اختر أو اكتب الكود/الاسم ثم Enter)<input id="pi" list="dl2" placeholder="${others.length?'ابحث عن مادة...':'لا توجد مواد مدرجة بعد'}"><datalist id="dl2">${others.map(c=>`<option value="${esc(c.code+' - '+c.name)}">`).join('')}</datalist></label>
+  <div id="pc" class="chips" style="grid-column:1/-1"></div></div>
+  <div class="bar" style="margin:14px 0 0"><button class="btn gold" id="sv">حفظ</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إلغاء</button></div>`);
+ const q=s=>d.querySelector(s);
+ casc('yl',['year','level'],v,null);
+ const drawPre=()=>q('#pc').innerHTML=pre.map(c=>`<span class="chip">${esc(c)} - ${esc(nm(c))}<button class="x" data-c="${esc(c)}">×</button></span>`).join('');drawPre();
+ q('#pc').onclick=e=>{const b=e.target.closest('button');if(b){pre=pre.filter(x=>x!==b.dataset.c);drawPre()}};
+ const addPre=()=>{const i=q('#pi');if(!i.value.trim())return;const c=find(i.value,others);if(!c)return alert('هذه المادة غير مدرجة في اللائحة. أدرجها أولًا ثم اختُرها كمتطلب.');
+  const self=cur?cur.course_code:(find(q('#rc').value,avail)||{}).code;
+  if(c.code===self)return alert('لا يمكن أن تكون المادة متطلبًا لنفسها');
+  if(self&&reach(c.code,self))return alert('هذا الاختيار يسبب حلقة مغلقة في المتطلبات');
+  if(!pre.includes(c.code))pre.push(c.code);i.value='';drawPre()};
+ q('#pi').onchange=addPre;q('#pi').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addPre()}};
+ q('#hp').onchange=()=>{if(q('#hp').value==='نعم'){q('#cw').value=20;q('#pr').value=20;q('#fe').value=60}else{q('#cw').value=20;q('#pr').value=0;q('#fe').value=80}};
+ q('#sv').onclick=async()=>{const c=cur?{code:cur.course_code}:find(q('#rc').value,avail);if(!c)return alert('اختر مادة من القائمة');
+  const cw=+q('#cw').value||0,pr=+q('#pr').value||0,fe=+q('#fe').value||0;
+  if(cw+pr+fe!==100)return alert('مجموع توزيع الدرجات يجب أن يساوي 100 (الحالي '+(cw+pr+fe)+')');
+  if(!v.year||!v.level)return alert('اختر الفرقة والمستوى');
+  const row={reg_id:curReg,course_code:c.code,year:v.year,level:v.level,credit_hours:+q('#rh').value||0,mandatory:q('#rm').value,has_practical:q('#hp').value,coursework:cw,practical:pr,final_exam:fe,max_retakes:+q('#mr').value||0,prereq:pre.join(',')||null};
+  try{await db.save('reg_courses',row,'id',id||null);d.remove();pgRegs()}catch(e){err(e)}}}
+
+/* ===== الشكاوى (رد وتصفية فقط) ===== */
+let cm=[],cfs='',cfc='',cfq='';
+async function pgComp(){try{cm=await db.list('complaints')}catch(e){return err(e)}
+ const codes=[...new Set(cm.map(x=>x.course_code).filter(Boolean))].sort();
+ $('#main').innerHTML=`<h2>الشكاوى</h2><div class="card"><div class="bar" style="margin:0"><select onchange="cfs=this.value;cRows()"><option value="">كل الحالات</option><option ${cfs==='جديدة'?'selected':''}>جديدة</option><option ${cfs==='تم الرد'?'selected':''}>تم الرد</option></select><select onchange="cfc=this.value;cRows()"><option value="">كل المواد</option>${codes.map(c=>`<option ${cfc===c?'selected':''}>${esc(c)}</option>`).join('')}</select><input placeholder="بحث بكود الطالب أو نص الشكوى" value="${esc(cfq)}" oninput="cfq=this.value;cRows()" style="flex:1"><button class="btn gold" onclick="cReplyAll()">رد على كل الشكاوى المعروضة (غير المُجاب عنها)</button><b id="cn"></b></div></div><div class="tw"><table><thead><tr><th>التاريخ</th><th>كود الطالب</th><th>المادة</th><th>الشكوى</th><th>الرد</th><th>الحالة</th><th></th></tr></thead><tbody id="cb2"></tbody></table></div>`;cRows()}
+const cFilt=()=>cm.filter(x=>(!cfs||x.status===cfs)&&(!cfc||x.course_code===cfc)&&(!cfq||((x.student_code||'')+' '+(x.body||'')).includes(cfq)));
+function cRows(){const r=cFilt();$('#cn').textContent=r.length+' شكوى';
+ $('#cb2').innerHTML=r.slice(0,300).map(x=>`<tr><td class="nw">${fdate(x.created_at)}</td><td>${esc(x.student_code)}</td><td>${esc(x.course_code)}</td><td>${esc(x.body)}</td><td>${esc(x.reply)}</td><td>${esc(x.status)}</td><td><button class="mini" onclick="cReply(${x.id})">${x.reply?'تعديل الرد':'رد'}</button></td></tr>`).join('')||'<tr><td colspan="7">لا توجد شكاوى. تظهر هنا عندما يرسلها الطلاب من بوابتهم.</td></tr>'}
+function cDo(ids,title,old){const d=modal(`<h2>${title}</h2><textarea id="rp" rows="5" style="width:100%">${esc(old||'')}</textarea><div class="bar" style="margin:12px 0 0"><button class="btn gold" id="ok">إرسال الرد</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إلغاء</button></div>`);
+ d.querySelector('#ok').onclick=async()=>{try{await rpc('reply_complaints',{p_token:T(),p_ids:ids,p_reply:d.querySelector('#rp').value});d.remove();pgComp()}catch(e){err(e)}}}
+function cReply(id){const x=cm.find(c=>c.id===id);cDo([id],'الرد على الشكوى',x.reply)}
+function cReplyAll(){const ids=cFilt().filter(x=>x.status!=='تم الرد').map(x=>x.id);if(!ids.length)return alert('لا توجد شكاوى غير مُجاب عنها ضمن المعروض.');cDo(ids,`رد موحد على ${ids.length} شكوى`)}
+
+/* ===== المرشدون الأكاديميون ===== */
+let av={v:{},ratio:25,pick:new Set(),as:{}},fac=[],advs=[],stuAll=[];
+async function pgAdv(){
+ try{[stuAll,advs,fac]=await Promise.all([db.list('students'),db.list('advisors'),rpc('list_faculty',{p_token:T()})])}catch(e){return err(e)}
+ $('#main').innerHTML=`<h2>المرشدون الأكاديميون</h2><div class="card"><div id="ac" class="grid5"></div></div><div id="ab"></div>`;
+ casc('ac',SF,av.v,advDraw);advDraw()}
+const advList=()=>stuAll.filter(s=>SF.every(f=>!av.v[f]||s[f]===av.v[f]));
+function advDraw(){av.as={};av.pick=new Set();const byS={};advs.forEach(a=>byS[a.student_code]=a.staff_id);
+ advList().forEach(s=>{if(byS[s.code]){av.as[s.code]=byS[s.code];av.pick.add(byS[s.code])}});advBody()}
+function advBody(){
+ if(!av.v.college){$('#ab').innerHTML='<div class="note">اختر الكلية (ثم القسم والشعبة والفرقة والمستوى حسب الحاجة) لعرض الطلاب.</div>';return}
+ const n=advList().length,sug=Math.max(1,Math.ceil(n/av.ratio)),cand=fac.filter(f=>!f.college||f.college===av.v.college);
+ $('#ab').innerHTML=`<div class="card"><b>${n} طالب</b> — عدد الطلاب لكل مرشد <input type="number" min="1" value="${av.ratio}" style="width:80px" onchange="av.ratio=Math.max(1,+this.value||25);advBody()"> — عدد المرشدين المقترح: <b>${sug}</b> <button class="btn ghost" onclick="advSug(${sug})">اختر المقترح تلقائيًا</button></div>
+ <div class="card"><b>أعضاء هيئة التدريس (${cand.length})</b><div class="chips">${cand.map(f=>`<label class="chip"><input type="checkbox" ${av.pick.has(f.id)?'checked':''} onchange="advPick(${f.id},this.checked)"> ${esc(f.name)}</label>`).join('')||'لا يوجد أعضاء هيئة تدريس لهذه الكلية. أضفهم من الحسابات والصلاحيات.'}</div>
+ <div class="bar" style="margin:12px 0 0"><button class="btn gold" onclick="advAuto()">توزيع تلقائي بالتساوي</button><button class="btn" onclick="advSave()">حفظ التوزيع</button></div></div><div id="ad"></div>`;advTable()}
+function advSug(k){const cand=fac.filter(f=>!f.college||f.college===av.v.college);av.pick=new Set(cand.slice(0,k).map(f=>f.id));advBody()}
+function advPick(id,on){on?av.pick.add(id):av.pick.delete(id);advTable()}
+function advAuto(){const ids=[...av.pick];if(!ids.length)return alert('اختر المرشدين أولًا.');av.as={};advList().sort((a,b)=>a.code.localeCompare(b.code)).forEach((s,i)=>av.as[s.code]=ids[i%ids.length]);advTable()}
+function advSet(code,val){if(val)av.as[code]=+val;else delete av.as[code];advCounts()}
+function advCounts(){const c={};Object.values(av.as).forEach(i=>c[i]=(c[i]||0)+1);const un=advList().filter(s=>!av.as[s.code]).length;
+ $('#acn').innerHTML=Object.entries(c).map(([i,k])=>`<span class="chip">${esc((fac.find(f=>f.id==i)||{}).name)}: ${k} طالب</span>`).join('')+(un?`<span class="chip" style="background:#f4c7c3">بدون مرشد: ${un}</span>`:'')}
+function advTable(){const list=advList(),ids=[...new Set([...av.pick,...Object.values(av.as)])],ops=a=>`<option value="">— بدون —</option>`+ids.map(i=>`<option value="${i}" ${a==i?'selected':''}>${esc((fac.find(f=>f.id==i)||{}).name)}</option>`).join('');
+ $('#ad').innerHTML=`<div class="chips" id="acn" style="margin-bottom:10px"></div><div class="tw"><table><thead><tr><th>الكود</th><th>الطالب</th><th>الفرقة</th><th>المستوى</th><th>المرشد (يمكن التعديل يدويًا)</th></tr></thead><tbody>${list.slice(0,200).map(s=>`<tr><td>${esc(s.code)}</td><td>${esc(s.name)}</td><td>${esc(s.year)}</td><td>${esc(s.level)}</td><td><select onchange="advSet('${esc(s.code)}',this.value)">${ops(av.as[s.code])}</select></td></tr>`).join('')}</tbody></table></div>${list.length>200?'<div class="note">يعرض أول 200 طالب للتعديل اليدوي، والتوزيع يشمل الجميع.</div>':''}`;advCounts()}
+async function advSave(){const list=advList(),rows=list.filter(s=>av.as[s.code]).map(s=>({staff_id:av.as[s.code],staff_name:(fac.find(f=>f.id===av.as[s.code])||{}).name,student_code:s.code,college:s.college,department:s.department,track:s.track,year:s.year,level:s.level})),clear=list.filter(s=>!av.as[s.code]).map(s=>s.code);
+ try{for(let i=0;i<Math.max(1,Math.ceil(rows.length/1000));i++)await rpc('save_advisors',{p_token:T(),p_rows:rows.slice(i*1000,i*1000+1000),p_clear:i?[]:clear});advs=await db.list('advisors');alert('تم حفظ التوزيع لـ '+rows.length+' طالب')}catch(e){err(e)}}
+
+/* ===== الحسابات والصلاحيات ===== */
+let stf=[];
+async function pgStaff(){try{stf=await db.list('staff')}catch(e){return err(e)}
+ $('#main').innerHTML=`<h2>الحسابات والصلاحيات</h2><div class="note">مدير: كل الصلاحيات. موظف: إدارة البيانات. عضو هيئة تدريس ومعيد: عرض والرد على الشكاوى حاليًا، وتتسع صلاحياتهم مع الوحدات القادمة. حسابات الطلاب تُنشأ تلقائيًا عند إضافتهم.</div><div class="bar"><button class="btn gold" onclick="stfForm()">+ حساب جديد</button></div><div class="tw"><table><thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الدور</th><th>الكلية</th><th>القسم</th><th></th></tr></thead><tbody>${stf.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.username)}</td><td>${ROLE[s.role]||esc(s.role)}</td><td>${esc(s.college)}</td><td>${esc(s.department)}</td><td class="nw"><button class="mini" onclick="stfForm(${s.id})">تعديل</button><button class="mini red" onclick="stfDel(${s.id})">حذف</button></td></tr>`).join('')}</tbody></table></div>`}
+function stfForm(id){const cur=id?stf.find(s=>s.id===id):{};
+ form(id?'تعديل حساب':'حساب جديد',[['name','الاسم'],['username','اسم المستخدم'],['password',id?'كلمة المرور (اتركها فارغة بدون تغيير)':'كلمة المرور','password'],['role','الدور','sel',Object.entries(ROLE).filter(e=>e[0]!=='student')]],cur,{c:['college','department'],isNew:!id,note:'للدكتور أو المعيد: حدد الكلية والقسم التابع لهما.'},
+  async(row,d)=>{if(!row.name||!row.username||!row.role)return alert('الاسم واسم المستخدم والدور مطلوبة');await db.save('staff',row,'id',id||null);d.remove();pgStaff()})}
+async function stfDel(id){if(!confirm('حذف الحساب؟'))return;try{await db.del('staff','id',id);pgStaff()}catch(e){err(e)}}
+
+/* ===== الإعدادات ===== */
+function pgSet(){const a=user.role==='admin';
+ $('#main').innerHTML=`<h2>الإعدادات</h2><div class="card"><b>كلمة المرور</b><p><button class="btn gold" onclick="pwModal()">تغيير كلمة المرور</button></p></div>`
+  +(a?`<div class="card"><b>الشعارات</b> <small>(الجامعة على اليمين، الكلية على اليسار)</small><div class="bar" style="margin-top:10px"><label>شعار الجامعة <input type="file" accept="image/*" onchange="logoUp('logo_u',this.files[0])"></label><label>شعار الكلية <input type="file" accept="image/*" onchange="logoUp('logo_c',this.files[0])"></label></div></div>`:'')
+  +`<div class="card"><b>الاتصال</b><p style="font-size:13px">متصل عبر بوابة gw. الوصول المباشر للجداول مغلق، وكل عملية يتحقق الخادم من جلستها وصلاحيتها.</p></div>`}
+function logoUp(k,f){if(!f)return;const im=new Image();
+ im.onload=async()=>{const s=Math.min(1,240/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  try{const data=c.toDataURL('image/png');await rpc('set_setting',{p_token:T(),p_key:k,p_value:data});logos[k==='logo_u'?'u':'c']=data;$('#hd').innerHTML=hdr()}catch(e){err(e)}};
+ im.src=URL.createObjectURL(f)}
+
+/* ===== البدء ===== */
+(async()=>{try{const g=await rpc('get_logos',{});logos={u:(g&&g.logo_u)||'',c:(g&&g.logo_c)||''}}catch{}
+ user&&user.token?home():login()})();
+</script></body></html>
