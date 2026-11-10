@@ -2,18 +2,19 @@
 let av={v:{},ratio:25,pick:new Set(),as:{}},fac=[],advs=[],stuAll=[];
 async function pgAdv(){
  try{[stuAll,advs,fac]=await Promise.all([db.list('students'),db.list('advisors'),rpc('list_faculty',{p_token:T()})])}catch(e){return err(e)}
- $('#main').innerHTML=`<h2>المرشدون الأكاديميون</h2><div class="card"><div id="ac" class="grid5"></div></div><div id="ab"></div>`;
- casc('ac',SF,av.v,advDraw);advDraw()}
-const advList=()=>stuAll.filter(s=>SF.every(f=>!av.v[f]||s[f]===av.v[f]));
+ $('#main').innerHTML=`<h2>المرشدون الأكاديميون</h2><div class="card"><div id="ac"></div></div><div id="ab"></div>`;
+ av.v.depts=av.v.depts||{};scopePicker('ac',av.v,{year:true,level:true,cb:advDraw});advDraw()}
+const advList=()=>stuAll.filter(s=>stScope(s,av.v));
+const advFac=f=>(!f.college||f.college===av.v.college)&&dsOverlap(dsOf(f),av.v.depts);
 function advDraw(){av.as={};av.pick=new Set();const byS={};advs.forEach(a=>byS[a.student_code]=a.staff_id);
  advList().forEach(s=>{if(byS[s.code]){av.as[s.code]=byS[s.code];av.pick.add(byS[s.code])}});advBody()}
 function advBody(){
- if(!av.v.college){$('#ab').innerHTML='<div class="note">اختر الكلية (ثم القسم والشعبة والفرقة والمستوى حسب الحاجة) لعرض الطلاب.</div>';return}
- const n=advList().length,sug=Math.max(1,Math.ceil(n/av.ratio)),cand=fac.filter(f=>!f.college||f.college===av.v.college);
+ if(!av.v.college){$('#ab').innerHTML='<div class="note">اختر الكلية (ثم قسمًا أو أكثر والشعب والفرقة والمستوى حسب الحاجة) لعرض الطلاب.</div>';return}
+ const n=advList().length,sug=Math.max(1,Math.ceil(n/av.ratio)),cand=fac.filter(advFac);
  $('#ab').innerHTML=`<div class="card"><b>${n} طالب</b> — عدد الطلاب لكل مرشد <input type="number" min="1" value="${av.ratio}" style="width:80px" onchange="av.ratio=Math.max(1,+this.value||25);advBody()"> — عدد المرشدين المقترح: <b>${sug}</b> <button class="btn ghost" onclick="advSug(${sug})">اختر المقترح تلقائيًا</button></div>
  <div class="card"><b>أعضاء هيئة التدريس (${cand.length})</b><div class="chips">${cand.map(f=>`<label class="chip"><input type="checkbox" ${av.pick.has(f.id)?'checked':''} onchange="advPick(${f.id},this.checked)"> ${esc(f.name)}</label>`).join('')||'لا يوجد أعضاء هيئة تدريس لهذه الكلية. أضفهم من الحسابات والصلاحيات.'}</div>
  <div class="bar" style="margin:12px 0 0"><button class="btn gold" onclick="advAuto()">توزيع تلقائي بالتساوي</button><button class="btn" onclick="advSave()">حفظ التوزيع</button></div></div><div id="ad"></div>`;advTable()}
-function advSug(k){const cand=fac.filter(f=>!f.college||f.college===av.v.college);av.pick=new Set(cand.slice(0,k).map(f=>f.id));advBody()}
+function advSug(k){const cand=fac.filter(advFac);av.pick=new Set(cand.slice(0,k).map(f=>f.id));advBody()}
 function advPick(id,on){on?av.pick.add(id):av.pick.delete(id);advTable()}
 function advAuto(){const ids=[...av.pick];if(!ids.length)return alert('اختر المرشدين أولًا.');av.as={};advList().sort((a,b)=>a.code.localeCompare(b.code)).forEach((s,i)=>av.as[s.code]=ids[i%ids.length]);advTable()}
 function advSet(code,val){if(val)av.as[code]=+val;else delete av.as[code];advCounts()}

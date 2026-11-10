@@ -1,0 +1,8 @@
+/* ===== بدء تيرم جديد: يسجّل الخادم كل طالب تلقائيًا في المواد المتاحة له ===== */
+function toOpen(){
+ const d=modal(`<h2>بدء تيرم جديد</h2><div class="grid"><label>اسم التيرم<input id="on" placeholder="الخريف 2026/2027"></label><label>النوع<select id="ok"><option value="regular">فصل دراسي (خريف/ربيع)</option><option value="summer">فصل صيفي</option></select></label><label>بداية التيرم<input id="os" type="date"></label><label>نهاية التيرم<input id="oe" type="date"></label><label id="osm" style="display:none">أقصى ساعات للطالب في الصيفي<input id="om" type="number" min="1" value="9"></label></div><div class="note" style="margin-top:10px">عند البدء يُسجَّل كل طالب على القيد تلقائيًا في مواد مرحلته المتاحة له (غير المحجوبة بمتطلبات سابقة)، إضافة إلى مواد رسب بها وما زالت محاولاته متاحة، بحدود الحد الأقصى لساعات الفصل في لائحته. الفصل الصيفي للمواد الراسب بها فقط، ويشترط أن تكون أتحته عند إغلاق التيرم السابق.</div><div class="bar" style="margin:12px 0 0"><button class="btn gold" id="sv">بدء التيرم</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إلغاء</button></div>`);
+ d.querySelector('#ok').onchange=e=>d.querySelector('#osm').style.display=e.target.value==='summer'?'':'none';
+ d.querySelector('#sv').onclick=async()=>{const g=i=>d.querySelector(i).value.trim(),name=g('#on'),s=g('#os'),e=g('#oe');
+  if(!name||!s||!e)return alert('الاسم وتاريخي البداية والنهاية مطلوبة.');if(s>e)return alert('نهاية التيرم يجب أن تكون بعد بدايته.');
+  if(!confirm('بدء التيرم وتسجيل الطلاب تلقائيًا؟'))return;
+  try{const r=await rpc('open_term',{p_token:T(),p_name:name,p_kind:g('#ok'),p_start:s,p_end:e,p_summer_max:+g('#om')||9});d.remove();alert(`تم بدء التيرم وتسجيل الطلاب في ${r.count} مادة.`);pgTerm()}catch(er){err(er)}}}

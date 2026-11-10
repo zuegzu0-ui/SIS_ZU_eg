@@ -22,8 +22,8 @@ async function crsUp(inp){const f=inp.files[0];inp.value='';if(!f)return;
 function regList(){const w=W();
  $('#rb').innerHTML=(w?`<div class="bar"><button class="btn gold" onclick="regForm()">+ لائحة جديدة</button></div>`:'')+`<div class="tw"><table><thead><tr><th>اسم اللائحة</th><th>الكلية</th><th>القسم</th><th>الشعبة</th><th>ساعات التخرج</th><th>عدد المواد</th><th></th></tr></thead><tbody>`
   +(regs.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.college)}</td><td>${esc(r.department)}</td><td>${esc(r.track)}</td><td>${esc(r.grad_hours)}</td><td>${rcs.filter(x=>x.reg_id===r.id).length}</td><td class="nw"><button class="mini" onclick="curReg=${r.id};pgRegs()">فتح وضبط المواد</button>${w?`<button class="mini" onclick="regForm(${r.id})">تعديل</button><button class="mini red" onclick="regDel(${r.id})">حذف</button>`:''}</td></tr>`).join('')||'<tr><td colspan="7">لا توجد لوائح.</td></tr>')+`</tbody></table></div>`}
-function regForm(id){const cur=id?regs.find(x=>x.id===id):{min_hours:12,max_hours:20};
- form(id?'تعديل لائحة':'لائحة جديدة',[['name','اسم اللائحة'],['grad_hours','إجمالي ساعات التخرج','number'],['min_hours','الحد الأدنى لساعات الفصل','number'],['max_hours','الحد الأقصى لساعات الفصل','number']],cur,{c:['college','department','track'],isNew:!id},
+function regForm(id){const cur=id?regs.find(x=>x.id===id):{min_hours:12,max_hours:20,pass_pct:60,min_component_pct:30};
+ form(id?'تعديل لائحة':'لائحة جديدة',[['name','اسم اللائحة'],['grad_hours','إجمالي ساعات التخرج','number'],['min_hours','الحد الأدنى لساعات الفصل','number'],['max_hours','الحد الأقصى لساعات الفصل','number'],['pass_pct','نسبة النجاح %','number'],['min_component_pct','أدنى نسبة في التحريري والعملي %','number']],cur,{c:['college','department','track'],isNew:!id},
   async(row,d)=>{if(!row.name||!row.college||!row.department)return alert('اسم اللائحة والكلية والقسم مطلوبة');await db.save('regulations',row,'id',id||null);d.remove();pgRegs()})}
 async function regDel(id){if(!confirm('حذف اللائحة وكل موادها؟'))return;try{await db.del('regulations','id',id);pgRegs()}catch(e){err(e)}}
 /* مواد اللائحة */
@@ -47,7 +47,7 @@ function rcForm(id){
  const pm={};inReg.forEach(x=>pm[x.course_code]=(x.prereq||'').split(',').filter(Boolean));
  const reach=(a,b,seen=new Set())=>a===b||(!seen.has(a)&&(seen.add(a),(pm[a]||[]).some(p=>reach(p,b,seen))));
  let pre=cur&&cur.prereq?cur.prereq.split(',').filter(Boolean):[];
- const v={college:reg.college,year:cur?cur.year:undefined,level:cur?cur.level:undefined},c0=cur||{credit_hours:3,mandatory:'نعم',has_practical:'لا',coursework:20,practical:0,final_exam:80,max_retakes:0};
+ const v={college:reg.college,year:cur?cur.year:undefined,level:cur?cur.level:undefined},c0=cur||{credit_hours:3,mandatory:'نعم',has_practical:'لا',coursework:20,practical:0,final_exam:80,max_retakes:2};
  const so=(n,l,a)=>`<select id="${n}">${l.map(o=>`<option ${o===a?'selected':''}>${o}</option>`).join('')}</select>`;
  const d=modal(`<h2>${cur?'تعديل مادة في اللائحة':'إدراج مادة في اللائحة'}</h2><div class="grid">
   <label>المادة (اختر أو اكتب الكود أو الاسم)<input id="rc" list="dl1" value="${cur?esc(cur.course_code+' - '+nm(cur.course_code)):''}" ${cur?'readonly':''}><datalist id="dl1">${avail.map(c=>`<option value="${esc(c.code+' - '+c.name)}">`).join('')}</datalist></label>

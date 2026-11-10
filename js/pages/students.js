@@ -1,5 +1,5 @@
 /* ===== الطلاب ===== */
-const SC=[['name','الاسم'],['code','الكود'],['email','الإيميل'],['national_id','الرقم القومي'],['college','الكلية'],['department','القسم'],['track','الشعبة'],['year','الفرقة'],['level','المستوى']];
+const SC=[['name','الاسم'],['code','الكود'],['email','الإيميل'],['national_id','الرقم القومي'],['college','الكلية'],['department','القسم'],['track','الشعبة'],['year','الفرقة'],['level','المستوى'],['seat_no','رقم الجلوس']];
 const SMAP={'الاسم':'name','الكود':'code','الايميل':'email','الرقمالقومي':'national_id','الكليه':'college','القسم':'department','الشعبه':'track','الفرقه':'year','المستوي':'level'};
 let stu=[],sf={},sq='';
 async function pgStudents(){

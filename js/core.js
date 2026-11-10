@@ -33,7 +33,7 @@ const SF=['college','department','track','year','level'];
 /* ===== أدوات مشتركة ===== */
 const img=s=>s?`<img src="${s}" alt="">`:'';
 function hdr(){return `<div class="lg">${img(logos.u)}</div><div class="tt"><h1>كلية التربية النوعية - جامعة الزقازيق</h1><small>نظام إدارة الطلاب</small>${user?`<div class="us">${esc(user.name)} (${ROLE[user.role]||''})<button onclick="pwModal()">تغيير كلمة المرور</button><button onclick="logout()">خروج</button></div>`:''}</div><div class="lg">${img(logos.c)}</div>`}
-function shell(b){$('#app').innerHTML=`<header id="hd">${hdr()}</header>${b}`}
+function shell(b){$('#app').innerHTML=`<header id="hd">${hdr()}</header>${b}<footer id="ft">${ftr()}</footer>`}
 function modal(html){const d=document.createElement('div');d.className='modal';d.innerHTML=`<div class="box">${html}</div>`;d.onclick=e=>{if(e.target===d)d.remove()};document.body.appendChild(d);return d}
 function ask(title,val,cb){const d=modal(`<h2>${title}</h2><input id="ai" style="width:100%" value="${esc(val||'')}"><div class="bar" style="margin:12px 0 0"><button class="btn gold" id="ok">حفظ</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إلغاء</button></div>`);
  const i=d.querySelector('#ai');i.focus();const sv=()=>{const v=i.value.trim();if(!v)return;d.remove();cb(v)};d.querySelector('#ok').onclick=sv;i.onkeydown=e=>{if(e.key==='Enter')sv()}}
@@ -62,11 +62,13 @@ function casc(id,fields,v,cb,any){
 /* نموذج عام: fields=[[key,label,type,options,attrs]] */
 function form(title,fields,vals,opt,onSave){
  const v={...vals};
- const d=modal(`<h2>${title}</h2><div class="grid">${fields.map(f=>`<label>${f[1]}${f[2]==='sel'?`<select name="${f[0]}"><option value=""></option>${f[3].map(o=>{o=Array.isArray(o)?o:[o,o];return `<option value="${esc(o[0])}" ${v[f[0]]==o[0]?'selected':''}>${esc(o[1])}</option>`}).join('')}</select>`:`<input name="${f[0]}" type="${f[2]||'text'}" value="${f[2]==='password'?'':esc(v[f[0]])}" ${f[4]||''}>`}</label>`).join('')}</div>${opt.c?'<div id="cc" class="grid" style="margin-top:10px"></div>':''}${opt.note?`<div class="note" style="margin-top:10px">${opt.note}</div>`:''}<div class="bar" style="margin:14px 0 0"><button class="btn gold" id="sv">حفظ</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إلغاء</button></div>`);
+ const d=modal(`<h2>${title}</h2><div class="grid">${fields.map(f=>`<label>${f[1]}${f[2]==='sel'?`<select name="${f[0]}"><option value=""></option>${f[3].map(o=>{o=Array.isArray(o)?o:[o,o];return `<option value="${esc(o[0])}" ${v[f[0]]==o[0]?'selected':''}>${esc(o[1])}</option>`}).join('')}</select>`:`<input name="${f[0]}" type="${f[2]||'text'}" value="${f[2]==='password'?'':esc(v[f[0]])}" ${f[4]||''}>`}</label>`).join('')}</div>${opt.c?'<div id="cc" class="grid" style="margin-top:10px"></div>':''}${opt.sp?'<div id="sp" style="margin-top:10px"></div>':''}${opt.note?`<div class="note" style="margin-top:10px">${opt.note}</div>`:''}<div class="bar" style="margin:14px 0 0"><button class="btn gold" id="sv">حفظ</button><button class="btn ghost" onclick="this.closest('.modal').remove()">إلغاء</button></div>`);
  if(opt.c)casc('cc',opt.c,v,null);
+ if(opt.sp){v.depts=dsOf(v);scopePicker('sp',v,opt.sp)}
  d.querySelector('#sv').onclick=async()=>{const row={};
   d.querySelectorAll('[name]').forEach(i=>{const x=i.value.trim();row[i.name]=x===''?null:(i.type==='number'?+x:x)});
   (opt.c||[]).forEach(f=>row[f]=v[f]||null);
+  if(opt.sp){row.college=v.college||null;row.dscope=v.depts||{};row.department=Object.keys(row.dscope)[0]||null;row.track=null;if(opt.sp.year)row.year=v.year||null;if(opt.sp.level)row.level=v.level||null}
   if(opt.isNew)Object.keys(row).forEach(k=>row[k]===null&&delete row[k]);
   try{await onSave(row,d)}catch(e){err(e)}};
  return d}
@@ -88,3 +90,33 @@ const DAYS=['السبت','الأحد','الاثنين','الثلاثاء','ال�
 const hm=t=>t?String(t).slice(0,5):'';
 const toMin=t=>{if(!t)return null;const[a,b]=String(t).split(':');return +a*60+ +b};
 const fromMin=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+
+/* ===== نطاق الأقسام والشعب المتعدد (قسم أو أكثر، وشعبة أو أكثر داخل كل قسم) =====
+   الشكل المخزَّن: dscope = {"اسم القسم":["شعبة1","شعبة2"], ...} والقائمة الفارغة = كل شعب القسم، والكائن الفارغ = كل الأقسام */
+const dsOf=r=>r&&r.dscope&&Object.keys(r.dscope).length?r.dscope:(r&&r.department?{[r.department]:r.track?[r.track]:[]}:{});
+const dsMatch=(ds,dept,track)=>{if(!Object.keys(ds||{}).length)return true;if(!(dept in ds))return false;const t=ds[dept]||[];return !t.length||t.includes(track)};
+const dsHas=(ds,dept)=>!Object.keys(ds||{}).length||dept in ds;
+const dsText=ds=>Object.keys(ds||{}).length?Object.entries(ds).map(([d,t])=>d+(t.length?' ('+t.join('، ')+')':'')).join(' ، '):'كل الأقسام';
+const dsOverlap=(a,b)=>{const ka=Object.keys(a||{}),kb=Object.keys(b||{});if(!ka.length||!kb.length)return true;return ka.some(d=>d in b&&(!(a[d]||[]).length||!(b[d]||[]).length||a[d].some(t=>b[d].includes(t))))};
+const stScope=(s,v)=>(!v.college||s.college===v.college)&&dsMatch(v.depts||{},s.department,s.track)&&(!v.year||s.year===v.year)&&(!v.level||s.level===v.level);
+/* st={college,depts,year,level}. opt={year:true,level:true,cb:fn} */
+function scopePicker(id,st,opt={}){
+ st.depts=st.depts||{};
+ const el=$('#'+id),c=orgs.find(o=>o.kind==='college'&&o.name===st.college),kids=(k,p)=>p?orgs.filter(o=>o.kind===k&&o.parent_id===p.id):[];
+ const deps=kids('department',c),y=kids('year',c).find(o=>o.name===st.year);
+ const sel=(f,l,list)=>`<label>${l}<select data-f="${f}"><option value="">${f==='college'?'اختر...':'الكل'}</option>${list.map(o=>`<option ${st[f]===o?'selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+ el.innerHTML=`<div class="grid5">${sel('college','الكلية',orgs.filter(o=>o.kind==='college').map(o=>o.name))}${opt.year?sel('year','الفرقة',kids('year',c).map(o=>o.name)):''}${opt.level?sel('level','المستوى',kids('level',y).map(o=>o.name)):''}</div>
+ <div class="card" style="margin:10px 0 0"><b>الأقسام والشعب</b> <small>(اختر قسمًا أو أكثر، وداخل كل قسم شعبة أو أكثر. بدون اختيار = الكل)</small>${deps.map(dp=>{const on=dp.name in st.depts,tr=kids('track',dp);return `<div class="node"><label class="chip"><input type="checkbox" data-d="${esc(dp.name)}" ${on?'checked':''}> ${esc(dp.name)}</label>${on&&tr.length?`<div class="chips">${tr.map(t=>`<label class="chip"><input type="checkbox" data-d="${esc(dp.name)}" data-t="${esc(t.name)}" ${st.depts[dp.name].includes(t.name)?'checked':''}> ${esc(t.name)}</label>`).join('')}</div>`:''}</div>`}).join('')||'<div>اختر الكلية أولًا.</div>'}</div>`;
+ el.querySelectorAll('select').forEach(s=>s.onchange=()=>{const f=s.dataset.f;st[f]=s.value||undefined;if(f==='college'){st.depts={};delete st.year;delete st.level}if(f==='year')delete st.level;scopePicker(id,st,opt);opt.cb&&opt.cb(st)});
+ el.querySelectorAll('input[data-d]').forEach(i=>i.onchange=()=>{const d=i.dataset.d,t=i.dataset.t;
+  if(t===undefined){i.checked?(st.depts[d]=st.depts[d]||[]):delete st.depts[d]}else{const a=st.depts[d];i.checked?a.includes(t)||a.push(t):st.depts[d]=a.filter(x=>x!==t)}
+  scopePicker(id,st,opt);opt.cb&&opt.cb(st)})}
+
+/* ===== الفوتر: وسائل التواصل + اسم المبرمج (روابطهما تُضاف من الإعدادات) ===== */
+let links={soc:[],dev:[]};
+const safeUrl=u=>/^https?:\/\//i.test(String(u||''))?u:'';
+const lnk=l=>`<a class="fl" href="${esc(l.u)}" target="_blank" rel="noopener noreferrer">${esc(l.n)}</a>`;
+function ftr(){const soc=links.soc.filter(l=>safeUrl(l.u)).map(lnk).join('');
+ return `<div class="fs">${soc||'<span class="fm">وسائل التواصل</span>'}</div><div class="fc">© كلية التربية النوعية - جامعة الزقازيق</div><div class="fd">تطوير: <button onclick="devModal()">MHD</button></div>`}
+function devModal(){const l=links.dev.filter(x=>safeUrl(x.u));
+ modal(`<h2>MHD</h2><p>مطوّر النظام</p><div class="chips">${l.map(lnk).join('')||'<span>لم تُضف روابط التواصل بعد (تُضاف من صفحة الإعدادات).</span>'}</div><div class="bar" style="margin:14px 0 0"><button class="btn ghost" onclick="this.closest('.modal').remove()">إغلاق</button></div>`)}

@@ -1,6 +1,6 @@
 /* ===== الشكاوى (رد وتصفية فقط) ===== */
 let cm=[],cfs='',cfc='',cfq='';
-async function pgComp(){try{cm=await db.list('complaints')}catch(e){return err(e)}
+async function pgComp(){try{cm=await rpc('list_complaints',{p_token:T()})}catch(e){return err(e)}
  const codes=[...new Set(cm.map(x=>x.course_code).filter(Boolean))].sort();
  $('#main').innerHTML=`<h2>الشكاوى</h2><div class="card"><div class="bar" style="margin:0"><select onchange="cfs=this.value;cRows()"><option value="">كل الحالات</option><option ${cfs==='جديدة'?'selected':''}>جديدة</option><option ${cfs==='تم الرد'?'selected':''}>تم الرد</option></select><select onchange="cfc=this.value;cRows()"><option value="">كل المواد</option>${codes.map(c=>`<option ${cfc===c?'selected':''}>${esc(c)}</option>`).join('')}</select><input placeholder="بحث بكود الطالب أو نص الشكوى" value="${esc(cfq)}" oninput="cfq=this.value;cRows()" style="flex:1"><button class="btn gold" onclick="cReplyAll()">رد على كل الشكاوى المعروضة (غير المُجاب عنها)</button><b id="cn"></b></div></div><div class="tw"><table><thead><tr><th>التاريخ</th><th>كود الطالب</th><th>المادة</th><th>الشكوى</th><th>الرد</th><th>الحالة</th><th></th></tr></thead><tbody id="cb2"></tbody></table></div>`;cRows()}
 const cFilt=()=>cm.filter(x=>(!cfs||x.status===cfs)&&(!cfc||x.course_code===cfc)&&(!cfq||((x.student_code||'')+' '+(x.body||'')).includes(cfq)));

@@ -84,7 +84,7 @@ function ttExport(){const o=Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
 function ttEditor(){
  const t=curTT(),b=curBld(),ro=!W()||t.status==='approved',dis=ro?'disabled':'',days=DAYS.filter(d=>(b.days||t.days||'').split(',').includes(d));
- const staffOpts=r=>{const pref=r.kind==='lecture'?'doctor':'assistant',l=[...ttFac].sort((a,c)=>(a.role===pref?0:1)-(c.role===pref?0:1)||a.name.localeCompare(c.name,'ar'));
+ const staffOpts=r=>{const pref=r.kind==='lecture'?'doctor':'assistant',sm=f=>dsMatch(dsOf(f),t.department,t.track)?0:1,l=[...ttFac].sort((a,c)=>sm(a)-sm(c)||(a.role===pref?0:1)-(c.role===pref?0:1)||a.name.localeCompare(c.name,'ar'));
   return `<option value="">—</option>`+l.map(f=>`<option value="${f.id}" ${r.staff_id===f.id?'selected':''}>${esc(f.name)}${f.role==='assistant'?' (معيد)':''}</option>`).join('')};
  const roomOpts=r=>{const k=r.kind==='lecture'?'lecture':'section';return `<option value="">تلقائي</option>`+ttRooms.filter(x=>x.building_id===t.building_id).sort((a,c)=>(a.kind===k?0:1)-(c.kind===k?0:1)).map(x=>`<option value="${x.id}" ${r.room_id===x.id?'selected':''}>${esc(x.name)}</option>`).join('')};
  const dayOpts=r=>`<option value="">—</option>`+days.map(d=>`<option ${r.day===d?'selected':''}>${d}</option>`).join('');
