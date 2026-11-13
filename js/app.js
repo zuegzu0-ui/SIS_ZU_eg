@@ -18,7 +18,8 @@ async function home(){
  if(user.role==='student')try{SLK=await rpc('my_locks',{p_token:T()})}catch{SLK=[]}
  const items=PAGES.filter(p=>user.role==='student'?p.a==='s':(p.a==='r'||(p.a==='w'&&W())||(p.a==='a'&&user.role==='admin'))).sort((a,b)=>a.o-b.o);
  if(!items.find(p=>p.k===cur))cur=items[0].k;
+ if(user.role==='student'&&new URLSearchParams(location.search).get('live')&&items.find(p=>p.k==='s_live'))cur='s_live';
  shell(`<div class="layout"><nav>${items.map(p=>`<button data-k="${p.k}" class="${p.k===cur?'on':''}" onclick="go('${p.k}')">${p.t}${user.role==='student'&&p.k!=='s_home'&&slock(p.k).length?' 🔒':''}</button>`).join('')}</nav><main id="main"></main></div>`);go(cur)}
-function go(k){cur=k;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));const p=PAGES.find(x=>x.k===k);if(!p)return;
+function go(k){if(typeof lvCleanup==='function')lvCleanup();if(typeof slCleanup==='function')slCleanup();cur=k;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));const p=PAGES.find(x=>x.k===k);if(!p)return;
  if(user.role==='student'&&k!=='s_home'&&slock(k).length){$('#main').innerHTML=`<h2>${p.t}</h2><div class="note" style="background:#f4c7c3;border-color:#a32"><b>هذا التبويب مغلق.</b><br>السبب:<br>${slock(k).map(l=>'• '+esc(l.reason)).join('<br>')}<br><small>تجد تفاصيل مصروفاتك ومدفوعاتك في تبويب «حسابي».</small></div>`;return}
  p.f()}

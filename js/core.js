@@ -1,6 +1,8 @@
 /* ===== الإعدادات ===== */
 /* مفتاح anon آمن هنا: لا يملك صلاحية على الجداول، ويصل فقط إلى دوال البوابة gw */
 const CFG={url:'https://yvpriubgmahlpeovfifo.supabase.co/rest/v1',key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2cHJpdWJnbWFobHBlb3ZmaWZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4ODkwMTEsImV4cCI6MjEwOTQ2NTAxMX0.c2u1oAoODgBxIfYL5WFfGHVgNVtJ41oyfdXKdtNtTe4'};
+CFG.jitsi='meet.jit.si';   /* نطاق خادم البث Jitsi (راجع LIVE_SETUP.md) */
+CFG.whiteboard='';        /* اختياري: خادم سبورة Jitsi المدمجة */
 const L=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
 const S=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
 let user=L('user',null);if(user&&!user.token){user=null;localStorage.removeItem('user')}

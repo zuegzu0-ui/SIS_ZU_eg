@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>السبورة البيضاء - كلية التربية النوعية</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--navy:#0b1f4b;--gold:#c9a227}
+*{box-sizing:border-box}body{margin:0;overflow:hidden;font-family:Tahoma,Arial,sans-serif;background:#fff}
+#tb{position:fixed;top:8px;right:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:#0b1f4bf2;padding:6px 10px;border-radius:10px;z-index:2;color:#fff;box-shadow:0 2px 8px #0004;max-width:calc(100% - 16px)}
+button{font-family:inherit;cursor:pointer;border:1px solid var(--gold);background:#fff;color:var(--navy);border-radius:6px;padding:4px 10px;font-weight:700}button.on{background:var(--gold)}
+.c{width:24px;height:24px;border-radius:50%;border:2px solid #fff;padding:0}.c.on{outline:3px solid var(--gold)}
+canvas{display:block;touch-action:none;cursor:crosshair}
+body.grid canvas{background-color:#fff;background-image:linear-gradient(#dfe3f0 1px,transparent 1px),linear-gradient(90deg,#dfe3f0 1px,transparent 1px);background-size:40px 40px}
+body:not(.grid) canvas{background:#fff}
+input[type=range]{width:90px}
+</style></head><body>
+<div id="tb">
+ <button id="pen" class="on">قلم</button><button id="hi">تظليل</button><button id="er">ممحاة</button>
+ <span id="cols"></span><label>السُمك <input id="sz" type="range" min="1" max="30" value="4"></label>
+ <button id="un">تراجع</button><button id="cl">مسح الكل</button><button id="gr">شبكة</button><button id="sv">حفظ صورة</button><button id="fs">ملء الشاشة</button>
+</div>
+<canvas id="c"></canvas>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let col='#111111',size=4,tool='pen',drawing=false,last=null,hist=[];
+const COLS=['#111111','#d32f2f','#1565c0','#2e7d32','#f9a825','#6a1b9a'];
+function fit(){const t=document.createElement('canvas');t.width=cv.width;t.height=cv.height;t.getContext('2d').drawImage(cv,0,0);cv.width=innerWidth;cv.height=innerHeight;ctx.drawImage(t,0,0)}
+fit();addEventListener('resize',fit);
+const cols=document.getElementById('cols');
+COLS.forEach((c,i)=>{const b=document.createElement('button');b.className='c'+(i?'':' on');b.style.background=c;b.onclick=()=>{col=c;[...cols.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');if(tool==='er')setTool('pen')};cols.appendChild(b)});
+function setTool(t){tool=t;['pen','hi','er'].forEach(k=>document.getElementById(k).classList.toggle('on',k===t))}
+['pen','hi','er'].forEach(k=>document.getElementById(k).onclick=()=>setTool(k));
+document.getElementById('sz').oninput=e=>size=+e.target.value;
+const snap=()=>{hist.push(ctx.getImageData(0,0,cv.width,cv.height));if(hist.length>30)hist.shift()};
+document.getElementById('un').onclick=()=>{const h=hist.pop();if(h)ctx.putImageData(h,0,0)};
+document.getElementById('cl').onclick=()=>{snap();ctx.clearRect(0,0,cv.width,cv.height)};
+document.getElementById('gr').onclick=()=>document.body.classList.toggle('grid');
+document.getElementById('fs').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+document.getElementById('sv').onclick=()=>{const o=document.createElement('canvas');o.width=cv.width;o.height=cv.height;const x=o.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,o.width,o.height);x.drawImage(cv,0,0);const a=document.createElement('a');a.href=o.toDataURL('image/png');a.download='السبورة-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.png';a.click()};
+function style(){ctx.lineCap='round';ctx.lineJoin='round';
+ if(tool==='er'){ctx.globalCompositeOperation='destination-out';ctx.globalAlpha=1;ctx.lineWidth=size*4}
+ else{ctx.globalCompositeOperation='source-over';ctx.strokeStyle=col;ctx.globalAlpha=tool==='hi'?.3:1;ctx.lineWidth=tool==='hi'?size*4:size}}
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);snap();drawing=true;last=[e.offsetX,e.offsetY];style();ctx.beginPath();ctx.moveTo(last[0],last[1]);ctx.lineTo(last[0]+.01,last[1]);ctx.stroke()});
+cv.addEventListener('pointermove',e=>{if(!drawing)return;style();ctx.beginPath();ctx.moveTo(last[0],last[1]);ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();last=[e.offsetX,e.offsetY]});
+['pointerup','pointercancel'].forEach(n=>cv.addEventListener(n,()=>{drawing=false;ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}));
+</script></body></html>
